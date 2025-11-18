@@ -1,12 +1,15 @@
 // backend/middlewares/error.handler.js
-module.exports = function errorHandler(err, req, res, next) {
-  console.error("[ERROR]", err);
+const errorHandler = (err, req, res, next) => {
+    const statusCode = err.statusCode || 500;
 
-  const status = err.status || 500;
-  const message = err.message || "Internal Server Error";
+    console.error('🔥 Error:', err.message);
+    if (err.stack) console.error(err.stack);
 
-  res.status(status).json({
-    success: false,
-    message,
-  });
+    res.status(statusCode).json({
+        success: false,
+        message: err.message || 'Internal Server Error',
+        error: process.env.NODE_ENV === 'development' ? err.stack : {}
+    });
 };
+
+export default errorHandler;
