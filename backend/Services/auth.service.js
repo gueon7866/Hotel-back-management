@@ -1,0 +1,47 @@
+// backend/services/auth.service.js
+const User = require("./models/User");
+const bcrypt = require("bcryptjs");
+
+exports.registerOwner = async (data) => {
+  const { email, password, name, businessName, businessNumber } = data;
+
+  const exists = await User.findOne({ email });
+  if (exists) {
+    const err = new Error("이미 존재하는 이메일입니다.");
+    err.status = 400;
+    throw err;
+  }
+
+  const user = await User.create({
+    email,
+    password,
+    name,
+    role: "OWNER",
+    businessName,
+    businessNumber,
+  });
+
+  // 비밀번호 제거
+  const userObj = user.toObject();
+  delete userObj.password;
+
+  return userObj;
+};
+
+exports.validateUser = async (email, password) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    const err = new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
+    err.status = 401;
+    throw err;
+  }
+
+  const valid = await user.comparePassword(password);
+  if (!valid) {
+    const err = new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
+    err.status = 401;
+    throw err;
+  }
+
+  return user;
+};
