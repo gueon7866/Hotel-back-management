@@ -1,8 +1,8 @@
 // backend/services/auth.service.js
-const User = require("./models/User");
-const bcrypt = require("bcryptjs");
+import User from "../models/User.js";
+import bcrypt from "bcryptjs";
 
-exports.registerOwner = async (data) => {
+export const registerOwner = async (data) => {
   const { email, password, name, businessName, businessNumber } = data;
 
   const exists = await User.findOne({ email });
@@ -28,7 +28,7 @@ exports.registerOwner = async (data) => {
   return userObj;
 };
 
-exports.validateUser = async (email, password) => {
+export const validateUser = async (email, password) => {
   const user = await User.findOne({ email });
   if (!user) {
     const err = new Error("이메일 또는 비밀번호가 올바르지 않습니다.");

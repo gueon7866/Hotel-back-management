@@ -1,12 +1,13 @@
 {
   "name": "back-management",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
      "start": "node backend/app.js",
       "dev": "nodemon backend/app.js"
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",

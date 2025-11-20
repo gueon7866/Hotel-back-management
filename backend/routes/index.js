@@ -1,11 +1,11 @@
 // backend/routes/index.js
-const express = require("express");
-const router = express.Router();
+import express from "express";
+import authRoutes from "./auth.routes.js";
+import ownerRoutes from "./owner.routes.js";
+import adminRoutes from "./admin.routes.js";
+import uploadRoutes from "./upload.routes.js";
 
-const authRoutes = require("./auth.routes");
-const ownerRoutes = require("./owner.routes");
-const adminRoutes = require("./admin.routes");
-const uploadRoutes = require("./upload.routes");
+const router = express.Router();
 
 router.get("/health", (req, res) => {
   res.json({ success: true, message: "OK from hotel-back-management" });
@@ -16,4 +16,4 @@ router.use("/owner", ownerRoutes);
 router.use("/admin", adminRoutes);
 router.use("/upload", uploadRoutes);
 
-module.exports = router;
+export default router;

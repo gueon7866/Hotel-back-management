@@ -1,5 +1,5 @@
 // backend/models/Hotel.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const hotelSchema = new mongoose.Schema(
   {
@@ -25,4 +25,4 @@ const hotelSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Hotel", hotelSchema);
+export default mongoose.model("Hotel", hotelSchema);

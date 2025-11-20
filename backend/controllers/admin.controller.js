@@ -1,7 +1,7 @@
 // backend/controllers/admin.controller.js
-const adminService = require("./services/admin.service");
+import * as adminService from "./services/admin.service.js";
 
-exports.getPendingHotels = async (req, res, next) => {
+export const getPendingHotels = async (req, res, next) => {
   try {
     const hotels = await adminService.getPendingHotels();
     res.json({ success: true, data: hotels });
@@ -10,7 +10,7 @@ exports.getPendingHotels = async (req, res, next) => {
   }
 };
 
-exports.approveHotel = async (req, res, next) => {
+export const approveHotel = async (req, res, next) => {
   try {
     const { hotelId } = req.params;
     const hotel = await adminService.approveHotel(hotelId);
@@ -20,7 +20,7 @@ exports.approveHotel = async (req, res, next) => {
   }
 };
 
-exports.rejectHotel = async (req, res, next) => {
+export const rejectHotel = async (req, res, next) => {
   try {
     const { hotelId } = req.params;
     const { reason } = req.body;

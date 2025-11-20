@@ -1,5 +1,6 @@
 // backend/middlewares/role.middleware.js
-module.exports = function requireRole(...allowedRoles) {
+
+export default function requireRole(...allowedRoles) {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
       return res
@@ -8,4 +9,4 @@ module.exports = function requireRole(...allowedRoles) {
     }
     next();
   };
-};
+}

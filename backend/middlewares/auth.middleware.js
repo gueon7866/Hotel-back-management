@@ -1,10 +1,10 @@
 // backend/middlewares/auth.middleware.js
-const jwt = require("jsonwebtoken");
-const User = require("./models/User");
+import jwt from "jsonwebtoken";
+import User from "./models/User.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
-module.exports = function authMiddleware(req, res, next) {
+export default function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res
@@ -27,4 +27,4 @@ module.exports = function authMiddleware(req, res, next) {
       .status(401)
       .json({ success: false, message: "유효하지 않은 토큰입니다." });
   }
-};
+}

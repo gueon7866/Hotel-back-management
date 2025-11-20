@@ -1,7 +1,7 @@
 // backend/controllers/owner.controller.js
-const ownerService = require("./services/owner.service");
+import * as ownerService from "./services/owner.service.js";
 
-exports.getMyHotels = async (req, res, next) => {
+export const getMyHotels = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
     const hotels = await ownerService.getHotelsByOwner(ownerId);
@@ -11,7 +11,7 @@ exports.getMyHotels = async (req, res, next) => {
   }
 };
 
-exports.createHotel = async (req, res, next) => {
+export const createHotel = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
     const hotel = await ownerService.createHotel(ownerId, req.body);
@@ -21,7 +21,7 @@ exports.createHotel = async (req, res, next) => {
   }
 };
 
-exports.updateHotel = async (req, res, next) => {
+export const updateHotel = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
     const { hotelId } = req.params;

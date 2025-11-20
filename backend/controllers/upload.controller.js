@@ -1,7 +1,7 @@
 // backend/controllers/upload.controller.js
-const uploadService = require("./services/upload.service");
+import * as uploadService from "./services/upload.service.js";
 
-exports.handleHotelImagesUpload = async (req, res, next) => {
+export const handleHotelImagesUpload = async (req, res, next) => {
   try {
     const { hotelId } = req.params;
     const files = req.files; // multer-s3가 채워줌

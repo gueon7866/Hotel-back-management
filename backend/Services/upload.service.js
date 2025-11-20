@@ -1,7 +1,7 @@
 // backend/services/upload.service.js
-const Hotel = require("../models/Hotel");
+import Hotel from "../models/Hotel.js";
 
-exports.saveHotelImages = async (ownerId, hotelId, files) => {
+export const saveHotelImages = async (ownerId, hotelId, files) => {
   const hotel = await Hotel.findOne({ _id: hotelId, owner: ownerId });
   if (!hotel) {
     const err = new Error("해당 호텔을 찾을 수 없습니다.");

@@ -1,11 +1,11 @@
 // backend/services/admin.service.js
-const Hotel = require("../models/Hotel");
+import Hotel from "../models/Hotel.js";
 
-exports.getPendingHotels = () => {
+export const getPendingHotels = () => {
   return Hotel.find({ status: "PENDING" }).populate("owner", "email name");
 };
 
-exports.approveHotel = async (hotelId) => {
+export const approveHotel = async (hotelId) => {
   const hotel = await Hotel.findById(hotelId);
   if (!hotel) {
     const err = new Error("호텔을 찾을 수 없습니다.");
@@ -18,7 +18,7 @@ exports.approveHotel = async (hotelId) => {
   return hotel;
 };
 
-exports.rejectHotel = async (hotelId, reason) => {
+export const rejectHotel = async (hotelId, reason) => {
   const hotel = await Hotel.findById(hotelId);
   if (!hotel) {
     const err = new Error("호텔을 찾을 수 없습니다.");

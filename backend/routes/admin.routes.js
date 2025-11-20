@@ -1,10 +1,12 @@
 // backend/routes/admin.routes.js
-const express = require("express");
-const router = express.Router();
-const adminController = require("../controllers/admin.controller");
-const auth = require("../middlewares/auth.middleware");
-const requireRole = require("../middlewares/role.middleware");
+import express from "express";
+import * as adminController from "../controllers/admin.controller.js";
+import auth from "../middlewares/auth.middleware.js";
+import requireRole from "../middlewares/role.middleware.js";
 
+const router = express.Router();
+
+// ADMIN 인증 미들웨어 적용
 router.use(auth, requireRole("ADMIN"));
 
 // 승인 대기 호텔 목록
@@ -16,4 +18,4 @@ router.patch("/hotels/:hotelId/approve", adminController.approveHotel);
 // 반려
 router.patch("/hotels/:hotelId/reject", adminController.rejectHotel);
 
-module.exports = router;
+export default router;

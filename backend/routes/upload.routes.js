@@ -1,12 +1,13 @@
 // backend/routes/upload.routes.js
-const express = require("express");
+import express from "express";
+import multer from "multer";
+import multerS3 from "multer-s3";
+import { s3, BUCKET, getHotelImageKey } from "../utils/s3.js";
+import auth from "../middlewares/auth.middleware.js";
+import requireRole from "../middlewares/role.middleware.js";
+import * as uploadController from "../controllers/upload.controller.js";
+
 const router = express.Router();
-const multer = require("multer");
-const multerS3 = require("multer-s3");
-const { s3, BUCKET, getHotelImageKey } = require("../utils/s3");
-const auth = require("../middlewares/auth.middleware");
-const requireRole = require("../middlewares/role.middleware");
-const uploadController = require("../controllers/upload.controller");
 
 const upload = multer({
   storage: multerS3({
@@ -30,4 +31,4 @@ router.post(
   uploadController.handleHotelImagesUpload
 );
 
-module.exports = router;
+export default router;
