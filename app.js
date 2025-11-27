@@ -1,26 +1,29 @@
 // app.js
+import dotenv from "dotenv";
+dotenv.config(); // .env를 가장 먼저 로드
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 
-import "./config/db.js";                // MongoDB 연결
-import registerRoutes from "./routes/index.js"; // 도메인별 라우트 등록
-import errorHandler from "./common/errorHandler.js"; // 공통 에러 핸들러
+import connectDB from "./config/db.js";              // MongoDB 연결 함수
+import registerRoutes from "./routes/index.js";      // 도메인별 라우트 등록
+import errorHandler from "./common/errorhandler.js"; // 공통 에러 핸들러 (파일 이름 소문자)
 
-// .env 로드
-dotenv.config();
-
+// Express 앱 생성
 const app = express();
+
+// MongoDB 연결
+connectDB();
 
 // 공통 미들웨어
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 라우트 등록 (/api/...)
+// 라우트 등록
 registerRoutes(app);
 
-// 404 핸들링 (선택)
+// 404 핸들러
 app.use((req, res, next) => {
   res.status(404).json({
     success: false,

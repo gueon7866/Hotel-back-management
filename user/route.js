@@ -7,8 +7,9 @@ import {
   getUsers,
   updateUserByAdmin,
 } from "./controller.js";
-import { verifyToken } from "../common/authMiddleware.js";
-import requireRole from "../middlewares/rolemiddleware.js";
+import { verifyToken } from "../common/authmiddleware.js";
+import requireRole from "../common/rolemiddleware.js";
+
 
 const router = Router();
 

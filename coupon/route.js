@@ -8,8 +8,9 @@ import {
   deleteCoupon,
   verifyCoupon,
 } from "./controller.js";
-import { verifyToken } from "../common/authMiddleware.js";
-import requireRole from "../middlewares/role.middleware.js";
+import { verifyToken } from "../common/authmiddleware.js";
+import requireRole from "../common/rolemiddleware.js";
+
 
 const router = Router();
 

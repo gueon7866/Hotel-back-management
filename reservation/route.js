@@ -1,18 +1,41 @@
 // reservation/route.js
 import { Router } from "express";
+import { verifyToken } from "../common/authmiddleware.js";
+import requireRole from "../common/rolemiddleware.js";
+
 import {
-  createReservation,
-  getReservationDetail,
-  getMyReservations,
-  cancelReservation,
+  getReservationsForAdmin,
+  getReservationsForOwner,
+  patchReservationStatus,
 } from "./controller.js";
-import { verifyToken } from "../common/authMiddleware.js";
 
 const router = Router();
 
-router.post("/", verifyToken, createReservation);
-router.get("/me", verifyToken, getMyReservations);
-router.get("/:id", verifyToken, getReservationDetail);
-router.patch("/:id/cancel", verifyToken, cancelReservation);
+// (여기에 기존 user용 라우트들 있을 것)
+// 예: router.post("/", verifyToken, createReservation);
+
+// 🔹 ADMIN: 전체 예약 조회
+router.get(
+  "/admin",
+  verifyToken,
+  requireRole("admin"),
+  getReservationsForAdmin
+);
+
+// 🔹 OWNER: 내 호텔 예약 조회
+router.get(
+  "/owner",
+  verifyToken,
+  requireRole("owner"),
+  getReservationsForOwner
+);
+
+// 🔹 ADMIN / OWNER: 상태 변경
+router.patch(
+  "/:id/status",
+  verifyToken,
+  requireRole("owner", "admin"),
+  patchReservationStatus
+);
 
 export default router;

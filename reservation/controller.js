@@ -1,75 +1,68 @@
 // reservation/controller.js
-import * as reservationService from "./service.js";
 import { successResponse, errorResponse } from "../common/response.js";
+import {
+  getAdminReservations,
+  getOwnerReservations,
+  updateReservationStatus,
+} from "./service.js";
 
-// POST /api/reservation
-export const createReservation = async (req, res) => {
+// 🔹 ADMIN: 전체 예약 조회
+export const getReservationsForAdmin = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { room, checkIn, checkOut, guests } = req.body;
-
-    const data = await reservationService.createReservation({
-      user: userId,
-      room,
-      checkIn,
-      checkOut,
-      guests,
-    });
-
-    return res
-      .status(201)
-      .json(successResponse(data, "RESERVATION_CREATED", 201));
-  } catch (err) {
-    return res
-      .status(err.statusCode || 400)
-      .json(errorResponse(err.message, err.statusCode || 400));
-  }
-};
-
-// GET /api/reservation/:id
-export const getReservationDetail = async (req, res) => {
-  try {
-    const data = await reservationService.getReservationById(req.params.id);
+    const { status } = req.query; // ?status=pending 이런 식으로 필터 가능
+    const data = await getAdminReservations({ status });
 
     return res
       .status(200)
-      .json(successResponse(data, "RESERVATION_DETAIL", 200));
+      .json(successResponse(data, "RESERVATION_ADMIN_LIST", 200));
   } catch (err) {
-    return res
-      .status(err.statusCode || 404)
-      .json(errorResponse(err.message, err.statusCode || 404));
-  }
-};
-
-// GET /api/reservation/me
-export const getMyReservations = async (req, res) => {
-  try {
-    const data = await reservationService.getReservationsByUser(req.user.id);
-
-    return res
-      .status(200)
-      .json(successResponse(data, "RESERVATION_LIST", 200));
-  } catch (err) {
+    console.error(err);
     return res
       .status(400)
-      .json(errorResponse("RESERVATION_FETCH_FAIL", 400));
+      .json(errorResponse(err.message || "RESERVATION_ADMIN_LIST_FAILED", 400));
   }
 };
 
-// PATCH /api/reservation/:id/cancel
-export const cancelReservation = async (req, res) => {
+// 🔹 OWNER: 내 호텔들 예약 조회
+export const getReservationsForOwner = async (req, res) => {
   try {
-    const data = await reservationService.cancelReservation(
-      req.params.id,
-      req.user.id
-    );
+    const { status } = req.query;
+    const ownerId = req.user.id; // JWT에서 들어온 내 userId
+
+    const data = await getOwnerReservations({ ownerId, status });
 
     return res
       .status(200)
-      .json(successResponse(data, "RESERVATION_CANCELLED", 200));
+      .json(successResponse(data, "RESERVATION_OWNER_LIST", 200));
   } catch (err) {
+    console.error(err);
     return res
-      .status(err.statusCode || 400)
-      .json(errorResponse(err.message, err.statusCode || 400));
+      .status(400)
+      .json(errorResponse(err.message || "RESERVATION_OWNER_LIST_FAILED", 400));
+  }
+};
+
+// 🔹 ADMIN / OWNER: 예약 상태 변경
+export const patchReservationStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res
+        .status(400)
+        .json(errorResponse("status 값이 필요합니다.", 400));
+    }
+
+    const data = await updateReservationStatus({ reservationId: id, status });
+
+    return res
+      .status(200)
+      .json(successResponse(data, "RESERVATION_STATUS_UPDATED", 200));
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(400)
+      .json(errorResponse(err.message || "RESERVATION_STATUS_UPDATE_FAILED", 400));
   }
 };
