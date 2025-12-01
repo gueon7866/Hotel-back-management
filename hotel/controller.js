@@ -57,7 +57,6 @@ export const updateHotel = async (req, res) => {
 
 //
 // ADMIN 컨트롤러
-//
 
 // GET /api/hotel/admin/pending
 export const getPendingHotels = async (_req, res) => {
@@ -67,7 +66,9 @@ export const getPendingHotels = async (_req, res) => {
       .status(200)
       .json(successResponse(hotels, "PENDING_HOTELS", 200));
   } catch (err) {
-    return res.status(400).json(errorResponse(err.message, 400));
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
   }
 };
 
@@ -102,3 +103,4 @@ export const rejectHotel = async (req, res) => {
       .json(errorResponse(err.message, err.statusCode || 400));
   }
 };
+// ⬆⬆ hotel/controller.js ADMIN 컨트롤러 교체 끝 ⬆⬆

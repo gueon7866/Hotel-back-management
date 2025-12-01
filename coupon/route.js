@@ -1,29 +1,47 @@
-// coupon/route.js
+// ⬇⬇ coupon/route.js 전체를 이걸로 교체 ⬇⬇
 import { Router } from "express";
-import {
-  getActiveCoupons,
-  getMyCoupons,
-  createCoupon,
-  updateCoupon,
-  deleteCoupon,
-  verifyCoupon,
-} from "./controller.js";
 import { verifyToken } from "../common/authmiddleware.js";
 import requireRole from "../common/rolemiddleware.js";
-
+import {
+  postCouponAsAdmin,
+  getCouponsAsAdmin,
+  deactivateCouponAsAdmin,
+  getCouponsAsOwner,
+} from "./controller.js";
 
 const router = Router();
 
-// Public
-router.get("/", getActiveCoupons);
+// ADMIN: 쿠폰 생성
+router.post(
+  "/admin",
+  verifyToken,
+  requireRole("admin"),
+  postCouponAsAdmin
+);
 
-// owner/admin만 생성 & 관리
-router.get("/my", verifyToken, requireRole("owner", "admin"), getMyCoupons);
-router.post("/", verifyToken, requireRole("owner", "admin"), createCoupon);
-router.put("/:id", verifyToken, requireRole("owner", "admin"), updateCoupon);
-router.delete("/:id", verifyToken, requireRole("owner", "admin"), deleteCoupon);
+// ADMIN: 쿠폰 목록 조회
+router.get(
+  "/admin",
+  verifyToken,
+  requireRole("admin"),
+  getCouponsAsAdmin
+);
 
-// 쿠폰 검증 (로그인 필요)
-router.get("/verify/:code", verifyToken, verifyCoupon);
+// ADMIN: 쿠폰 비활성화
+router.patch(
+  "/admin/:id/deactivate",
+  verifyToken,
+  requireRole("admin"),
+  deactivateCouponAsAdmin
+);
+
+// OWNER: 내 쿠폰 목록 조회
+router.get(
+  "/owner",
+  verifyToken,
+  requireRole("owner"),
+  getCouponsAsOwner
+);
 
 export default router;
+// ⬆⬆ coupon/route.js 전체 교체 끝 ⬆⬆

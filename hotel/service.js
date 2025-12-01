@@ -86,7 +86,6 @@ export const updateHotel = async (ownerId, hotelId, updates) => {
 
 //
 // ADMIN 서비스
-//
 
 // 승인 대기 호텔 목록
 export const getPendingHotels = async () => {
@@ -99,6 +98,18 @@ export const approveHotel = async (hotelId) => {
   if (!hotel) {
     const err = new Error("HOTEL_NOT_FOUND");
     err.statusCode = 404;
+    throw err;
+  }
+
+  if (hotel.status === "approved") {
+    const err = new Error("HOTEL_ALREADY_APPROVED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (hotel.status === "rejected") {
+    const err = new Error("HOTEL_ALREADY_REJECTED");
+    err.statusCode = 400;
     throw err;
   }
 
@@ -115,6 +126,19 @@ export const rejectHotel = async (hotelId) => {
     throw err;
   }
 
+  if (hotel.status === "rejected") {
+    const err = new Error("HOTEL_ALREADY_REJECTED");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (hotel.status === "approved") {
+    const err = new Error("HOTEL_ALREADY_APPROVED");
+    err.statusCode = 400;
+    throw err;
+  }
+
   hotel.status = "rejected";
   return await hotel.save();
 };
+// ⬆⬆ hotel/service.js ADMIN 서비스 부분 교체 끝 ⬆⬆

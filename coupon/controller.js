@@ -1,90 +1,89 @@
-// coupon/controller.js
-import * as couponService from "./service.js";
+// ⬇⬇ coupon/controller.js 전체를 이걸로 교체 ⬇⬇
 import { successResponse, errorResponse } from "../common/response.js";
+import {
+  createCoupon,
+  getCouponsForAdmin,
+  deactivateCoupon,
+  getCouponsForOwner,
+} from "./service.js";
 
-// GET /api/coupons
-export const getActiveCoupons = async (_req, res) => {
+// ADMIN: 쿠폰 생성
+export const postCouponAsAdmin = async (req, res) => {
   try {
-    const coupons = await couponService.getActiveCoupons();
-    return res
-      .status(200)
-      .json(successResponse(coupons, "COUPON_LIST", 200));
-  } catch (err) {
-    return res.status(400).json(errorResponse(err.message, 400));
-  }
-};
+    const adminId = req.user.id;
+    const coupon = await createCoupon(req.body, adminId);
 
-// GET /api/coupons/my
-export const getMyCoupons = async (req, res) => {
-  try {
-    const coupons = await couponService.getMyCoupons(req.user.id);
-    return res
-      .status(200)
-      .json(successResponse(coupons, "MY_COUPONS", 200));
-  } catch (err) {
-    return res.status(400).json(errorResponse(err.message, 400));
-  }
-};
-
-// POST /api/coupons
-export const createCoupon = async (req, res) => {
-  try {
-    const coupon = await couponService.createCoupon(req.user.id, req.body);
     return res
       .status(201)
       .json(successResponse(coupon, "COUPON_CREATED", 201));
   } catch (err) {
+    console.error(err);
     return res
       .status(err.statusCode || 400)
       .json(errorResponse(err.message, err.statusCode || 400));
   }
 };
 
-// PUT /api/coupons/:id
-export const updateCoupon = async (req, res) => {
+// ADMIN: 쿠폰 목록 조회
+export const getCouponsAsAdmin = async (req, res) => {
   try {
-    const isAdmin = req.user.role === "admin";
-    const coupon = await couponService.updateCoupon(
-      req.user.id,
-      req.params.id,
-      req.body,
-      isAdmin
-    );
+    const { ownerId, isActive, page = 1, limit = 20 } = req.query;
+
+    const data = await getCouponsForAdmin({
+      ownerId,
+      isActive,
+      page,
+      limit,
+    });
+
     return res
       .status(200)
-      .json(successResponse(coupon, "COUPON_UPDATED", 200));
+      .json(successResponse(data, "COUPON_ADMIN_LIST", 200));
   } catch (err) {
+    console.error(err);
     return res
       .status(err.statusCode || 400)
       .json(errorResponse(err.message, err.statusCode || 400));
   }
 };
 
-// DELETE /api/coupons/:id
-export const deleteCoupon = async (req, res) => {
+// ADMIN: 쿠폰 비활성화
+export const deactivateCouponAsAdmin = async (req, res) => {
   try {
-    const isAdmin = req.user.role === "admin";
-    await couponService.deleteCoupon(req.user.id, req.params.id, isAdmin);
+    const { id } = req.params;
+    const coupon = await deactivateCoupon(id);
+
     return res
       .status(200)
-      .json(successResponse(null, "COUPON_DELETED", 200));
+      .json(successResponse(coupon, "COUPON_DEACTIVATED", 200));
   } catch (err) {
+    console.error(err);
     return res
       .status(err.statusCode || 400)
       .json(errorResponse(err.message, err.statusCode || 400));
   }
 };
 
-// GET /api/coupons/verify/:code
-export const verifyCoupon = async (req, res) => {
+// OWNER: 내 쿠폰 목록 조회
+export const getCouponsAsOwner = async (req, res) => {
   try {
-    const coupon = await couponService.verifyCoupon(req.params.code);
+    const ownerId = req.user.id;
+    const { page = 1, limit = 20 } = req.query;
+
+    const data = await getCouponsForOwner({
+      ownerId,
+      page,
+      limit,
+    });
+
     return res
       .status(200)
-      .json(successResponse(coupon, "COUPON_VALID", 200));
+      .json(successResponse(data, "COUPON_OWNER_LIST", 200));
   } catch (err) {
+    console.error(err);
     return res
-      .status(err.statusCode || 404)
-      .json(errorResponse(err.message, err.statusCode || 404));
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
   }
 };
+// ⬆⬆ coupon/controller.js 전체 교체 끝 ⬆⬆
