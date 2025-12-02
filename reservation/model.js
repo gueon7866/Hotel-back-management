@@ -1,6 +1,7 @@
 // reservation/model.js (back-management)
 
 import mongoose from "mongoose";
+import { businessConnection } from "../config/db.js";
 
 const reservationSchema = new mongoose.Schema(
   {
@@ -47,5 +48,5 @@ reservationSchema.set("toJSON", {
   },
 });
 
-export const Reservation = mongoose.model("Reservation", reservationSchema);
+export const Reservation = businessConnection.model("Reservation", reservationSchema);
 export default Reservation;

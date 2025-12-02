@@ -1,5 +1,7 @@
 // room/model.js
 import mongoose from "mongoose";
+import { businessConnection } from "../config/db.js";
+
 
 const { Schema } = mongoose;
 
@@ -42,5 +44,5 @@ roomSchema.set("toJSON", {
   },
 });
 
-export const Room = mongoose.model("Room", roomSchema);
+export const Room = businessConnection.model("Room", roomSchema);
 export default Room;

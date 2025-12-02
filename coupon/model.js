@@ -1,6 +1,6 @@
 // ⬇⬇ coupon/model.js 전체를 이걸로 교체 ⬇⬇
 import mongoose from "mongoose";
-
+import { businessConnection } from "../config/db.js";
 const couponSchema = new mongoose.Schema(
   {
     name: {
@@ -62,6 +62,6 @@ couponSchema.set("toJSON", {
   },
 });
 
-export const Coupon = mongoose.model("Coupon", couponSchema);
+export const Coupon = businessConnection.model("Coupon", couponSchema);
 export default Coupon;
 // ⬆⬆ coupon/model.js 전체 교체 끝 ⬆⬆

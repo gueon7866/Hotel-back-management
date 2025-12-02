@@ -1,46 +1,29 @@
-// hotel/model.js
+// ⬇⬇ hotel/model.js 전체 교체 ⬇⬇
 import mongoose from "mongoose";
+import { businessConnection } from "../config/db.js";
 
-const { Schema } = mongoose;
-
-const hotelSchema = new Schema(
+const hotelSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
-    description: { type: String, trim: true },
-    city: { type: String, required: true, trim: true },
-    address: { type: String, trim: true },
-    location: { type: String, trim: true },
-    images: [{ type: String, trim: true }],
-    amenities: [{ type: String, trim: true }],
-    ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
-    ratingCount: { type: Number, default: 0 },
-    owner: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    name: { type: String, required: true },
+    city: { type: String, required: true },
+    address: { type: String },
+    // 이 호텔의 소유자 (owner_db.User)
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-    basePrice: { type: Number, default: 0 },
-    tags: [{ type: String, trim: true }],
+    // 필요하면 여기 나머지 필드들(설명, 가격, 이미지 등) 그대로 추가
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
+  { timestamps: true }
 );
 
-hotelSchema.index({ city: 1, status: 1 });
-
-hotelSchema.set("toJSON", {
-  virtuals: true,
-  transform: (_doc, ret) => {
-    ret.id = ret._id;
-    ret.hotelId = ret._id;
-    delete ret._id;
-    delete ret.__v;
-  },
-});
-
-export const Hotel = mongoose.model("Hotel", hotelSchema);
+// ✅ 핵심: 기본 mongoose.model 이 아니라 businessConnection.model 사용
+export const Hotel = businessConnection.model("Hotel", hotelSchema);
 export default Hotel;
+// ⬆⬆ hotel/model.js 전체 교체 끝 ⬆⬆
