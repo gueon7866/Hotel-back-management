@@ -1,7 +1,7 @@
 // ⬇⬇ user/model.js 전체 교체 ⬇⬇
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { businessConnection } from "../config/db.js";
+import { dbConnection } from "../config/db.js";
 
 // 사업자/관리자용 User (owner_db)
 const userSchema = new mongoose.Schema(
@@ -58,6 +58,6 @@ userSchema.set("toJSON", {
 });
 
 // ✅ owner_db(businessConnection)에 User 저장
-export const User = businessConnection.model("User", userSchema);
+export const User = dbConnection.model("User", userSchema);
 export default User;
 // ⬆⬆ user/model.js 교체 끝 ⬆⬆

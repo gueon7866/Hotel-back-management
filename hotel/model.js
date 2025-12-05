@@ -1,6 +1,6 @@
 // ⬇⬇ hotel/model.js 전체 교체 ⬇⬇
 import mongoose from "mongoose";
-import { businessConnection } from "../config/db.js";
+import { dbConnection } from "../config/db.js";
 
 const hotelSchema = new mongoose.Schema(
   {
@@ -24,6 +24,6 @@ const hotelSchema = new mongoose.Schema(
 );
 
 // ✅ 핵심: 기본 mongoose.model 이 아니라 businessConnection.model 사용
-export const Hotel = businessConnection.model("Hotel", hotelSchema);
+export const Hotel = dbConnection.model("Hotel", hotelSchema);
 export default Hotel;
 // ⬆⬆ hotel/model.js 전체 교체 끝 ⬆⬆
