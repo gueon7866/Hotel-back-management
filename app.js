@@ -4,6 +4,8 @@ dotenv.config(); // .env를 가장 먼저 로드
 import express from "express";
 import cors from "cors";
 
+console.log('MONGO_URI:', process.env.MONGO_URI);
+
 import { connectDB } from "./config/db.js";              // MongoDB 연결 함수
 import registerRoutes from "./routes/index.js";      // 도메인별 라우트 등록
 import errorHandler from "./common/errorhandler.js"; // 공통 에러 핸들러

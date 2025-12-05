@@ -1,6 +1,6 @@
 // ⬇⬇ review/model.js 파일이 없다면, 새로 만들고 전체를 이걸로 넣기 ⬇⬇
 import mongoose from "mongoose";
-import { businessConnection } from "../config/db.js";
+import { dbConnection } from "../config/db.js";
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -69,6 +69,6 @@ reviewSchema.set("toJSON", {
   },
 });
 
-export const Review = businessConnection.model("Review", reviewSchema);
+export const Review = dbConnection.model("Review", reviewSchema);
 export default Review;
 // ⬆⬆ review/model.js 전체 생성 끝 ⬆⬆
