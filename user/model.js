@@ -1,12 +1,16 @@
-// ⬇⬇ user/model.js 전체 교체 ⬇⬇
+// user/model.js
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { dbConnection } from "../config/db.js";
 
-// 사업자/관리자용 User (owner_db)
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
+    // 기본 정보
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     email: {
       type: String,
       required: true,
@@ -14,24 +18,43 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    password: { type: String, required: true },
+    password: {
+      type: String,
+      required: true, // 항상 해시된 값으로 저장
+    },
+    phone: {
+      type: String,
+    },
+
+    // 권한/상태
     role: {
       type: String,
-      enum: ["user", "owner", "admin"],
+      enum: ["owner", "admin"], // 필요하면 "superadmin" 등 추가 가능
       default: "owner",
     },
-    // 필요하면 여기에 추가 필드들...
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+
+    // 마지막 로그인 시간 등
+    lastLoginAt: {
+      type: Date,
+    },
   },
-  { timestamps: true }
+  {
+    // ❗❗ 실제 MongoDB 컬렉션 이름을 owner_users로 고정
+    collection: "owner_users",
+    timestamps: true, // createdAt, updatedAt 자동 생성
+  }
 );
 
-// 🔐 저장 전에 비밀번호 해시
-userSchema.pre("save", async function (next) {
-  // password 필드가 변경되지 않았으면 그냥 패스
-  if (!this.isModified("password")) {
-    return next();
-  }
+// 이메일 유니크 인덱스
+userSchema.index({ email: 1 }, { unique: true });
 
+// 비밀번호 해시 (회원가입/비번 변경 시)
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -41,12 +64,12 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// 🔐 로그인 시 비밀번호 비교 메서드
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
+// 비밀번호 비교 메서드
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
-// 응답에서 비밀번호 제거 + id 변환
+// JSON으로 보낼 때 민감 정보 제거
 userSchema.set("toJSON", {
   virtuals: true,
   transform: (_doc, ret) => {
@@ -57,7 +80,6 @@ userSchema.set("toJSON", {
   },
 });
 
-// ✅ owner_db(businessConnection)에 User 저장
+// 모델 이름은 그대로 "User" (나머지 코드 안 고쳐도 됨)
 export const User = dbConnection.model("User", userSchema);
 export default User;
-// ⬆⬆ user/model.js 교체 끝 ⬆⬆
