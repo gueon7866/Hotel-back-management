@@ -7,94 +7,112 @@ import Hotel from "./model.js";
 
 // 내 호텔 목록 (페이징)
 export const getHotelsByOwner = async (ownerId, options = {}) => {
-  const page = options.page || 1;
-  const limit = options.limit || 10;
+  const page = Number(options.page) || 1;
+  const limit = Number(options.limit) || 10;
   const skip = (page - 1) * limit;
 
   const filter = { owner: ownerId };
 
   const [items, total] = await Promise.all([
-    Hotel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Hotel.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
     Hotel.countDocuments(filter),
   ]);
 
   return {
     items,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: total > 0 ? Math.ceil(total / limit) : 0,
+    },
   };
 };
 
-// 호텔 생성 (항상 pending으로 시작)
-export const createHotel = async (ownerId, data) => {
-  const { name, city } = data;
+// 호텔 생성
+export const createHotel = async (ownerId, payload) => {
+  const { name, city, address } = payload;
 
   if (!name || !city) {
-    const err = new Error("NAME_CITY_REQUIRED");
+    const err = new Error("HOTEL_REQUIRED_FIELDS");
     err.statusCode = 400;
     throw err;
   }
 
   const hotel = await Hotel.create({
-    ...data,
-    images: Array.isArray(data.images) ? data.images : [],
-    amenities: Array.isArray(data.amenities) ? data.amenities : [],
     owner: ownerId,
-    status: "pending",
+    name,
+    city,
+    address,
+    status: "pending", // 생성 시 기본은 pending
   });
 
   return hotel;
 };
 
-// 호텔 수정 (본인 소유만)
-export const updateHotel = async (ownerId, hotelId, updates) => {
+// 호텔 수정
+export const updateHotel = async (ownerId, hotelId, payload) => {
   const hotel = await Hotel.findById(hotelId);
+
   if (!hotel) {
     const err = new Error("HOTEL_NOT_FOUND");
     err.statusCode = 404;
     throw err;
   }
 
-  if (hotel.owner.toString() !== ownerId) {
+  if (hotel.owner.toString() !== ownerId.toString()) {
     const err = new Error("NO_PERMISSION");
     err.statusCode = 403;
     throw err;
   }
 
-  const fields = [
-    "name",
-    "description",
-    "city",
-    "address",
-    "location",
-    "images",
-    "amenities",
-    "basePrice",
-    "tags",
-  ];
+  if (payload.name !== undefined) hotel.name = payload.name;
+  if (payload.city !== undefined) hotel.city = payload.city;
+  if (payload.address !== undefined) hotel.address = payload.address;
 
-  fields.forEach((f) => {
-    if (updates[f] !== undefined) {
-      hotel[f] = updates[f];
-    }
-  });
-
-  return await hotel.save();
+  const updated = await hotel.save();
+  return updated;
 };
 
 //
 // ADMIN 서비스
+//
 
 // 승인 대기 호텔 목록
-export const getPendingHotels = async () => {
-  return await Hotel.find({ status: "pending" }).sort({ createdAt: -1 });
+export const getPendingHotels = async (options = {}) => {
+  const page = Number(options.page) || 1;
+  const limit = Number(options.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const filter = { status: "pending" };
+
+  const [items, total] = await Promise.all([
+    Hotel.find(filter)
+      .populate("owner", "name email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Hotel.countDocuments(filter),
+  ]);
+
+  return {
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: total > 0 ? Math.ceil(total / limit) : 0,
+    },
+  };
 };
 
 // 호텔 승인
 export const approveHotel = async (hotelId) => {
   const hotel = await Hotel.findById(hotelId);
+
   if (!hotel) {
     const err = new Error("HOTEL_NOT_FOUND");
     err.statusCode = 404;
@@ -107,28 +125,18 @@ export const approveHotel = async (hotelId) => {
     throw err;
   }
 
-  if (hotel.status === "rejected") {
-    const err = new Error("HOTEL_ALREADY_REJECTED");
-    err.statusCode = 400;
-    throw err;
-  }
-
   hotel.status = "approved";
-  return await hotel.save();
+  const updated = await hotel.save();
+  return updated;
 };
 
 // 호텔 반려
 export const rejectHotel = async (hotelId) => {
   const hotel = await Hotel.findById(hotelId);
+
   if (!hotel) {
     const err = new Error("HOTEL_NOT_FOUND");
     err.statusCode = 404;
-    throw err;
-  }
-
-  if (hotel.status === "rejected") {
-    const err = new Error("HOTEL_ALREADY_REJECTED");
-    err.statusCode = 400;
     throw err;
   }
 
@@ -139,6 +147,6 @@ export const rejectHotel = async (hotelId) => {
   }
 
   hotel.status = "rejected";
-  return await hotel.save();
+  const updated = await hotel.save();
+  return updated;
 };
-// ⬆⬆ hotel/service.js ADMIN 서비스 부분 교체 끝 ⬆⬆

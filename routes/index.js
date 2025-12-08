@@ -6,7 +6,7 @@ import roomRoute from "../room/route.js";
 import couponRoute from "../coupon/route.js";
 import dashboardRoute from "../dashboard/route.js";
 import reviewRoute from "../review/route.js";
-
+import userRoute from "../user/route.js";
 const registerRoutes = (app) => {
   app.use("/api/auth", authRoute);
   app.use("/api/hotel", hotelRoute);
@@ -15,6 +15,7 @@ const registerRoutes = (app) => {
   app.use("/api/coupons", couponRoute);
   app.use("/api/dashboard", dashboardRoute);
   app.use("/api/reviews", reviewRoute);
+  app.use("/api/user/", userRoute);
 };
 
 export default registerRoutes;

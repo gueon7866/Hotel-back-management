@@ -27,10 +27,17 @@ export const postCouponAsAdmin = async (req, res) => {
 // ADMIN: 쿠폰 목록 조회
 export const getCouponsAsAdmin = async (req, res) => {
   try {
-    const { ownerId, isActive, page = 1, limit = 20 } = req.query;
+    const {
+      ownerId,
+      businessNumber, // 🔥 추가: 사업자번호로 필터 가능
+      isActive,
+      page = 1,
+      limit = 20,
+    } = req.query;
 
     const data = await getCouponsForAdmin({
       ownerId,
+      businessNumber,
       isActive,
       page,
       limit,
@@ -64,7 +71,7 @@ export const deactivateCouponAsAdmin = async (req, res) => {
   }
 };
 
-// OWNER: 내 쿠폰 목록 조회
+// OWNER: 내 쿠폰 목록 조회 (토큰 기준 owner)
 export const getCouponsAsOwner = async (req, res) => {
   try {
     const ownerId = req.user.id;
