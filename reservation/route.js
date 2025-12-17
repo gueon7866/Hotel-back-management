@@ -7,6 +7,7 @@ import {
   getReservationsForAdmin,
   getReservationsForOwner,
   patchReservationStatus,
+  deleteReservationController,
 } from "./controller.js";
 
 const router = Router();
@@ -36,6 +37,14 @@ router.patch(
   verifyToken,
   requireRole("owner", "admin"),
   patchReservationStatus
+);
+
+// 🔹 ADMIN / OWNER: 예약 삭제
+router.delete(
+  "/:id",
+  verifyToken,
+  requireRole("owner", "admin"),
+  deleteReservationController
 );
 
 export default router;

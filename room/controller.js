@@ -16,7 +16,7 @@ export const getRoomsByHotel = async (req, res) => {
     }
 
     const rooms = await roomService.getRoomsByHotel(
-      req.user.id,
+      req.user.id || req.user._id,
       req.params.hotelId
     );
 
@@ -38,7 +38,7 @@ export const createRoom = async (req, res) => {
     }
 
     const room = await roomService.createRoom(
-      req.user.id,
+      req.user.id || req.user._id,
       req.params.hotelId,
       req.body
     );
@@ -63,7 +63,7 @@ export const updateRoom = async (req, res) => {
     }
 
     const room = await roomService.updateRoom(
-      req.user.id,
+      req.user.id || req.user._id,
       req.params.roomId,
       req.body
     );
@@ -85,7 +85,7 @@ export const deleteRoom = async (req, res) => {
         .json(errorResponse("NO_PERMISSION", 403));
     }
 
-    await roomService.deleteRoom(req.user.id, req.params.roomId);
+    await roomService.deleteRoom(req.user.id || req.user._id, req.params.roomId);
 
     return res
       .status(200)

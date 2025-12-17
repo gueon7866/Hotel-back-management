@@ -85,7 +85,14 @@ router.post("/register", async (req, res) => {
  */
 router.post("/owner/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const {
+      name,
+      email,
+      password,
+      confirmPassword,
+      businessNumber,
+      phone,
+    } = req.body;
 
     if (!name || !email || !password) {
       return res
@@ -93,11 +100,14 @@ router.post("/owner/register", async (req, res) => {
         .json(errorResponse("NAME_EMAIL_PASSWORD_REQUIRED", 400));
     }
 
-    // role을 강제로 owner로 고정
+    // role을 강제로 owner로 고정, 사업자 번호/연락처도 함께 전달
     const { user, token } = await register({
       name,
       email,
       password,
+      confirmPassword,
+      businessNumber,
+      phone,
       role: "owner",
     });
 

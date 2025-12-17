@@ -146,3 +146,16 @@ export const updateReservationStatus = async ({ reservationId, status }) => {
 
   return reservation;
 };
+
+// 🔹 ADMIN / OWNER: 예약 삭제
+export const deleteReservation = async (reservationId) => {
+  const reservation = await Reservation.findById(reservationId);
+  if (!reservation) {
+    const err = new Error("RESERVATION_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  await Reservation.findByIdAndDelete(reservationId);
+  return true;
+};

@@ -9,7 +9,7 @@ import { successResponse, errorResponse } from "../common/response.js";
 // GET /api/hotel/owner
 export const getMyHotels = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.user.id || req.user._id;
     const page = parseInt(req.query.page || 1, 10);
     const limit = parseInt(req.query.limit || 10, 10);
 
@@ -26,7 +26,7 @@ export const getMyHotels = async (req, res) => {
 // POST /api/hotel/owner
 export const createHotel = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.user.id || req.user._id;
     const hotel = await hotelService.createHotel(ownerId, req.body);
 
     return res
@@ -42,7 +42,7 @@ export const createHotel = async (req, res) => {
 // PATCH /api/hotel/owner/:hotelId
 export const updateHotel = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.user.id || req.user._id;
     const { hotelId } = req.params;
 
     const hotel = await hotelService.updateHotel(ownerId, hotelId, req.body);
@@ -58,10 +58,40 @@ export const updateHotel = async (req, res) => {
 //
 // ADMIN 컨트롤러
 
-// GET /api/hotel/admin/pending
-export const getPendingHotels = async (_req, res) => {
+// GET /api/hotel/admin - 전체 호텔 목록 (상태 필터 가능)
+export const getAllHotels = async (req, res) => {
   try {
-    const hotels = await hotelService.getPendingHotels();
+    const {
+      status,
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    const data = await hotelService.getAllHotels({
+      status,
+      page,
+      limit,
+    });
+
+    return res
+      .status(200)
+      .json(successResponse(data, "ALL_HOTELS", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+// GET /api/hotel/admin/pending - 승인 대기 호텔 목록 (하위 호환성)
+export const getPendingHotels = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    const hotels = await hotelService.getPendingHotels({ page, limit });
     return res
       .status(200)
       .json(successResponse(hotels, "PENDING_HOTELS", 200));
@@ -103,4 +133,32 @@ export const rejectHotel = async (req, res) => {
       .json(errorResponse(err.message, err.statusCode || 400));
   }
 };
+
+export const uploadHotelImages = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const hotel = await Hotel.findById(id);
+    if (!hotel) {
+      return res
+        .status(404)
+        .json(errorResponse("HOTEL_NOT_FOUND", 404));
+    }
+
+    const imageUrls = req.files.map((file) => file.location);
+
+    hotel.images = [...(hotel.images || []), ...imageUrls];
+    await hotel.save();
+
+    return res
+      .status(200)
+      .json(successResponse(hotel, "HOTEL_IMAGE_UPLOADED", 200));
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(400)
+      .json(errorResponse(err.message, 400));
+  }
+};
+
 // ⬆⬆ hotel/controller.js ADMIN 컨트롤러 교체 끝 ⬆⬆

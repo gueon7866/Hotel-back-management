@@ -18,6 +18,10 @@ const hotelSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+    images: {
+      type: [String],
+      default: [],
+    },
     // 필요하면 여기 나머지 필드들(설명, 가격, 이미지 등) 그대로 추가
   },
   { timestamps: true }

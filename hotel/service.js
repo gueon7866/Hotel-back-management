@@ -81,6 +81,39 @@ export const updateHotel = async (ownerId, hotelId, payload) => {
 // ADMIN 서비스
 //
 
+// 전체 호텔 목록 조회 (상태 필터 가능)
+export const getAllHotels = async (options = {}) => {
+  const page = Number(options.page) || 1;
+  const limit = Number(options.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const filter = {};
+  
+  // 상태 필터가 있으면 적용
+  if (options.status && options.status !== "all") {
+    filter.status = options.status;
+  }
+
+  const [items, total] = await Promise.all([
+    Hotel.find(filter)
+      .populate("owner", "name email businessNumber")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Hotel.countDocuments(filter),
+  ]);
+
+  return {
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: total > 0 ? Math.ceil(total / limit) : 0,
+    },
+  };
+};
+
 // 승인 대기 호텔 목록
 export const getPendingHotels = async (options = {}) => {
   const page = Number(options.page) || 1;
@@ -119,12 +152,6 @@ export const approveHotel = async (hotelId) => {
     throw err;
   }
 
-  if (hotel.status === "approved") {
-    const err = new Error("HOTEL_ALREADY_APPROVED");
-    err.statusCode = 400;
-    throw err;
-  }
-
   hotel.status = "approved";
   const updated = await hotel.save();
   return updated;
@@ -137,12 +164,6 @@ export const rejectHotel = async (hotelId) => {
   if (!hotel) {
     const err = new Error("HOTEL_NOT_FOUND");
     err.statusCode = 404;
-    throw err;
-  }
-
-  if (hotel.status === "approved") {
-    const err = new Error("HOTEL_ALREADY_APPROVED");
-    err.statusCode = 400;
     throw err;
   }
 

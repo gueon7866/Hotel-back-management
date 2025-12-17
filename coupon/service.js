@@ -21,32 +21,28 @@ export const createCoupon = async (data, adminId) => {
     throw err;
   }
 
-  if (!ownerId && !businessNumber) {
-    const err = new Error("OWNER_ID_OR_BUSINESS_NUMBER_REQUIRED");
-    err.statusCode = 400;
-    throw err;
-  }
+  // ownerId, businessNumber 가 모두 없으면 "전역 쿠폰"으로 간주 (특정 사업자에 귀속되지 않음)
+  let owner = null;
 
-  // 1) owner(사업자) 찾기
-  let owner;
+  if (ownerId || businessNumber) {
+    // 1) owner(사업자) 찾기 – 선택적으로만 수행
+    if (ownerId) {
+      owner = await User.findById(ownerId);
+    } else if (businessNumber) {
+      owner = await User.findOne({ businessNumber });
+    }
 
-  if (ownerId) {
-    // 예전처럼 ownerId가 들어온 경우도 지원 (호환용)
-    owner = await User.findById(ownerId);
-  } else if (businessNumber) {
-    owner = await User.findOne({ businessNumber });
-  }
+    if (!owner) {
+      const err = new Error("OWNER_NOT_FOUND");
+      err.statusCode = 404;
+      throw err;
+    }
 
-  if (!owner) {
-    const err = new Error("OWNER_NOT_FOUND");
-    err.statusCode = 404;
-    throw err;
-  }
-
-  if (owner.role !== "owner") {
-    const err = new Error("USER_IS_NOT_OWNER");
-    err.statusCode = 400;
-    throw err;
+    if (owner.role !== "owner") {
+      const err = new Error("USER_IS_NOT_OWNER");
+      err.statusCode = 400;
+      throw err;
+    }
   }
 
   // 2) 코드 중복 체크
@@ -58,7 +54,7 @@ export const createCoupon = async (data, adminId) => {
   }
 
   // 3) 쿠폰 생성
-   let coupon;
+  let coupon;
   try {
     coupon = await Coupon.create({
       name,
@@ -67,8 +63,8 @@ export const createCoupon = async (data, adminId) => {
       minOrderAmount: minOrderAmount || 0,
       validFrom,
       validTo,
-      owner: owner._id,
-      ownerBusinessNumber: owner.businessNumber || businessNumber || null,
+      owner: owner ? owner._id : null,
+      ownerBusinessNumber: owner?.businessNumber || businessNumber || null,
       isActive: true,
       createdBy: adminId,
     });
@@ -90,22 +86,23 @@ export const getCouponsForAdmin = async ({
 }) => {
   const filter = {};
 
-  // ownerId or businessNumber 중 하나로 필터링
-  if (businessNumber && !ownerId) {
-    const owner = await User.findOne({ businessNumber });
-    if (!owner) {
-      // 해당 사업자번호 가진 오너 없으면 그냥 빈 결과 반환
-      return {
-        items: [],
-        total: 0,
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
-        totalPages: 0,
-      };
+  // ownerId / businessNumber 필터는 선택 사항으로 유지 (null 이면 전역 쿠폰 포함 전체)
+  if (businessNumber || ownerId) {
+    if (businessNumber && !ownerId) {
+      const owner = await User.findOne({ businessNumber });
+      if (!owner) {
+        return {
+          items: [],
+          total: 0,
+          page: Number(page) || 1,
+          limit: Number(limit) || 20,
+          totalPages: 0,
+        };
+      }
+      filter.owner = owner._id;
+    } else if (ownerId) {
+      filter.owner = ownerId;
     }
-    filter.owner = owner._id;
-  } else if (ownerId) {
-    filter.owner = ownerId;
   }
 
   if (isActive !== undefined) {
@@ -155,16 +152,14 @@ export const deactivateCoupon = async (couponId) => {
   return coupon;
 };
 
-// OWNER: 내 쿠폰 목록 조회 (활성 + 기간 내, 토큰 기준 ownerId 사용)
+// OWNER: 쿠폰 목록 조회 (활성 + 기간 내, 전역/사업자 쿠폰 모두)
 export const getCouponsForOwner = async ({
-  ownerId,
   page = 1,
   limit = 20,
 }) => {
   const now = new Date();
 
   const filter = {
-    owner: ownerId,
     isActive: true,
     validFrom: { $lte: now },
     validTo: { $gte: now },

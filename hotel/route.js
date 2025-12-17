@@ -4,12 +4,15 @@ import {
   getMyHotels,
   createHotel,
   updateHotel,
+  getAllHotels,
   getPendingHotels,
   approveHotel,
   rejectHotel,
 } from "./controller.js";
 import { verifyToken } from "../common/authmiddleware.js";
 import requireRole from "../common/rolemiddleware.js";
+import { s3ImageUpload } from "../middlewares/s3Upload.js";
+import { uploadHotelImages } from "./controller.js";
 
 const router = Router();
 
@@ -34,6 +37,14 @@ router.post(
   createHotel
 );
 
+router.post(
+  "/owner/:hotelId/images",
+  verifyToken,
+  requireRole("owner", "admin"),
+  s3ImageUpload("hotel").array("images", 5),
+  uploadHotelImages
+);
+
 // 호텔 수정 (PATCH / PUT 둘 다 같은 핸들러)
 router.patch(
   "/owner/:hotelId",
@@ -54,7 +65,15 @@ router.put(
 // /api/hotel/admin...
 //
 
-// 승인 대기 호텔 목록
+// 전체 호텔 목록 조회 (상태 필터 가능)
+router.get(
+  "/admin",
+  verifyToken,
+  requireRole("admin"),
+  getAllHotels
+);
+
+// 승인 대기 호텔 목록 (하위 호환성)
 router.get(
   "/admin/pending",
   verifyToken,

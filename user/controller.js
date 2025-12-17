@@ -5,7 +5,7 @@ import { successResponse, errorResponse } from "../common/response.js";
 // GET /api/user/me
 export const getMe = async (req, res) => {
   try {
-    const user = await userService.getMe(req.user.id);
+    const user = await userService.getMe(req.user.id || req.user._id);
     return res.status(200).json(successResponse(user, "ME", 200));
   } catch (err) {
     return res
@@ -17,7 +17,7 @@ export const getMe = async (req, res) => {
 // PUT /api/user/me
 export const updateMe = async (req, res) => {
   try {
-    const user = await userService.updateMe(req.user.id, req.body);
+    const user = await userService.updateMe(req.user.id || req.user._id, req.body);
     return res.status(200).json(successResponse(user, "ME_UPDATED", 200));
   } catch (err) {
     return res
@@ -31,7 +31,7 @@ export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const user = await userService.changePassword(
-      req.user.id,
+      req.user.id || req.user._id,
       currentPassword,
       newPassword
     );

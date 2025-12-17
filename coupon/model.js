@@ -33,10 +33,12 @@ const couponSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    // 쿠폰이 특정 사업자 전용인 경우에만 설정 (전역 쿠폰은 null 가능)
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // 쿠폰 받는 사업자
-      required: true,
+      required: false,
+      default: null,
     },
     isActive: {
       type: Boolean,

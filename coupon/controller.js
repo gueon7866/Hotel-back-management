@@ -5,7 +5,7 @@ import * as couponService from "./service.js";
 // ADMIN: 쿠폰 생성
 export const postCouponAsAdmin = async (req, res) => {
   try {
-    const adminId = req.user.id;
+    const adminId = req.user.id || req.user._id;
     const coupon = await couponService.createCoupon(req.body, adminId);
 
     return res
@@ -69,7 +69,7 @@ export const deactivateCouponAsAdmin = async (req, res) => {
 // OWNER: 내 쿠폰 목록 조회
 export const getCouponsAsOwner = async (req, res) => {
   try {
-    const ownerId = req.user.id;
+    const ownerId = req.user.id || req.user._id;
     const { page = 1, limit = 20 } = req.query;
 
     const data = await couponService.getCouponsForOwner({

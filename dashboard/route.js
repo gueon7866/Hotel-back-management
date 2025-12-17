@@ -3,7 +3,11 @@
 import { Router } from "express";
 import { verifyToken } from "../common/authmiddleware.js";
 import requireRole from "../common/rolemiddleware.js";
-import { getAdminDashboard, getOwnerDashboard } from "./controller.js";
+import {
+  getAdminDashboard,
+  getOwnerDashboard,
+  getAdminRevenueTrend,
+} from "./controller.js";
 
 const router = Router();
 
@@ -13,6 +17,14 @@ router.get(
   verifyToken,
   requireRole("admin"),
   getAdminDashboard
+);
+
+// 관리자 매출 차트용 추세 데이터
+router.get(
+  "/admin/revenue-trend",
+  verifyToken,
+  requireRole("admin"),
+  getAdminRevenueTrend
 );
 
 router.get(
