@@ -1,9 +1,10 @@
 // hotel/controller.js
 import * as hotelService from "./service.js";
+import Hotel from "./model.js";
 import { successResponse, errorResponse } from "../common/response.js";
 
 //
-// OWNER(사업자) 컨트롤러
+// OWNER (사업자)
 //
 
 // GET /api/hotel/owner
@@ -27,12 +28,20 @@ export const getMyHotels = async (req, res) => {
 export const createHotel = async (req, res) => {
   try {
     const ownerId = req.user.id || req.user._id;
-    const hotel = await hotelService.createHotel(ownerId, req.body);
+
+    // 🔥 핵심: S3 업로드된 이미지 URL 추출
+    const images = req.files?.map((file) => file.location) || [];
+
+    const hotel = await hotelService.createHotel(ownerId, {
+      ...req.body,
+      images,
+    });
 
     return res
       .status(201)
       .json(successResponse(hotel, "HOTEL_CREATED_PENDING", 201));
   } catch (err) {
+    console.error(err);
     return res
       .status(err.statusCode || 400)
       .json(errorResponse(err.message, err.statusCode || 400));
@@ -56,16 +65,13 @@ export const updateHotel = async (req, res) => {
 };
 
 //
-// ADMIN 컨트롤러
+// ADMIN
+//
 
-// GET /api/hotel/admin - 전체 호텔 목록 (상태 필터 가능)
+// GET /api/hotel/admin
 export const getAllHotels = async (req, res) => {
   try {
-    const {
-      status,
-      page = 1,
-      limit = 20,
-    } = req.query;
+    const { status, page = 1, limit = 20 } = req.query;
 
     const data = await hotelService.getAllHotels({
       status,
@@ -76,25 +82,6 @@ export const getAllHotels = async (req, res) => {
     return res
       .status(200)
       .json(successResponse(data, "ALL_HOTELS", 200));
-  } catch (err) {
-    return res
-      .status(err.statusCode || 400)
-      .json(errorResponse(err.message, err.statusCode || 400));
-  }
-};
-
-// GET /api/hotel/admin/pending - 승인 대기 호텔 목록 (하위 호환성)
-export const getPendingHotels = async (req, res) => {
-  try {
-    const {
-      page = 1,
-      limit = 20,
-    } = req.query;
-
-    const hotels = await hotelService.getPendingHotels({ page, limit });
-    return res
-      .status(200)
-      .json(successResponse(hotels, "PENDING_HOTELS", 200));
   } catch (err) {
     return res
       .status(err.statusCode || 400)
@@ -134,6 +121,7 @@ export const rejectHotel = async (req, res) => {
   }
 };
 
+// POST /api/hotel/:id/images
 export const uploadHotelImages = async (req, res) => {
   try {
     const { id } = req.params;
@@ -146,7 +134,6 @@ export const uploadHotelImages = async (req, res) => {
     }
 
     const imageUrls = req.files.map((file) => file.location);
-
     hotel.images = [...(hotel.images || []), ...imageUrls];
     await hotel.save();
 
@@ -160,5 +147,3 @@ export const uploadHotelImages = async (req, res) => {
       .json(errorResponse(err.message, 400));
   }
 };
-
-// ⬆⬆ hotel/controller.js ADMIN 컨트롤러 교체 끝 ⬆⬆

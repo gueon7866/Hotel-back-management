@@ -33,8 +33,9 @@ export const getHotelsByOwner = async (ownerId, options = {}) => {
 };
 
 // 호텔 생성
-export const createHotel = async (ownerId, payload) => {
-  const { name, city, address } = payload;
+// hotel/service.js
+export const createHotel = async (ownerId, data) => {
+  const { name, city, address, images = [] } = data;
 
   if (!name || !city) {
     const err = new Error("HOTEL_REQUIRED_FIELDS");
@@ -43,15 +44,17 @@ export const createHotel = async (ownerId, payload) => {
   }
 
   const hotel = await Hotel.create({
-    owner: ownerId,
     name,
     city,
     address,
-    status: "pending", // 생성 시 기본은 pending
+    owner: ownerId,
+    images,
+    status: "pending",
   });
 
   return hotel;
 };
+
 
 // 호텔 수정
 export const updateHotel = async (ownerId, hotelId, payload) => {
