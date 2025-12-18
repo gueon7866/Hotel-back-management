@@ -1,6 +1,14 @@
 import multer from "multer";
 import multerS3 from "multer-s3";
-import { s3 } from "../utils/s3.js";
+import AWS from "aws-sdk";
+
+const s3 = new AWS.S3({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY,
+    secretAccessKey: process.env.AWS_SECRET_KEY,
+  },
+});
 
 const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
 
@@ -17,11 +25,10 @@ export const s3ImageUpload = (folder) =>
       bucket: process.env.AWS_S3_BUCKET,
       contentType: multerS3.AUTO_CONTENT_TYPE,
       key: (req, file, cb) => {
-        const ext = file.originalname.split(".").pop();
-        const filename = `${folder}/${Date.now()}-${Math.random()
-          .toString(36)
-          .substring(2)}.${ext}`;
-        cb(null, filename);
+        cb(
+          null,
+          `${folder}/${Date.now()}-${file.originalname}`
+        );
       },
     }),
     limits: {
