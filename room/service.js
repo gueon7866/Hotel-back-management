@@ -151,3 +151,32 @@ export const deleteRoom = async (ownerId, roomId) => {
   await Room.findByIdAndDelete(roomId);
   return true;
 };
+
+// 객실 이미지 추가
+export const addRoomImages = async (ownerId, roomId, imageUrls = []) => {
+  const room = await Room.findById(roomId);
+  if (!room) {
+    const err = new Error("ROOM_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const hotel = await Hotel.findById(room.hotel);
+  if (!hotel) {
+    const err = new Error("HOTEL_NOT_FOUND");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (!hotel.owner) {
+    hotel.owner = ownerId;
+    await hotel.save();
+  } else if (hotel.owner.toString() !== ownerId.toString()) {
+    const err = new Error("NO_PERMISSION");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  room.images = [...(room.images || []), ...imageUrls];
+  return await room.save();
+};

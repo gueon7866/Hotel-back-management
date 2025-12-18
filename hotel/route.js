@@ -7,11 +7,13 @@ import {
   getPendingHotels,
   approveHotel,
   rejectHotel,
+  uploadHotelImages,
 } from "./controller.js";
 
 import { verifyToken } from "../common/authmiddleware.js";
-import { requireRole } from "../common/rolemiddleware.js";
-import { s3ImageUpload } from "../middleware/s3.js";
+import requireRole from "../common/rolemiddleware.js";
+import { s3ImageUpload } from "../middlewares/s3Upload.js";
+import optionalMulter from "../middlewares/optionalMulter.js";
 
 const router = express.Router();
 
@@ -27,7 +29,7 @@ router.post(
   "/owner",
   verifyToken,
   requireRole("owner", "admin"),
-  s3ImageUpload("hotel").array("images", 5),
+  optionalMulter(s3ImageUpload("hotel").array("images", 5)),
   createHotel
 );
 
@@ -36,6 +38,16 @@ router.patch(
   verifyToken,
   requireRole("owner", "admin"),
   updateHotel
+);
+
+// 호텔 이미지 추가 업로드
+// POST /api/hotel/:id/images
+router.post(
+  "/:id/images",
+  verifyToken,
+  requireRole("owner", "admin"),
+  optionalMulter(s3ImageUpload("hotel").array("images", 5)),
+  uploadHotelImages
 );
 
 // ADMINt

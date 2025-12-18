@@ -89,6 +89,26 @@ export const getAllHotels = async (req, res) => {
   }
 };
 
+// GET /api/hotel/admin/pending
+export const getPendingHotels = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+
+    const data = await hotelService.getPendingHotels({
+      page,
+      limit,
+    });
+
+    return res
+      .status(200)
+      .json(successResponse(data, "PENDING_HOTELS", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
 // PATCH /api/hotel/admin/:hotelId/approve
 export const approveHotel = async (req, res) => {
   try {
@@ -131,6 +151,19 @@ export const uploadHotelImages = async (req, res) => {
       return res
         .status(404)
         .json(errorResponse("HOTEL_NOT_FOUND", 404));
+    }
+
+    // owner는 본인 호텔만 업로드 가능 (admin은 전체 가능)
+    if (
+      req.user?.role !== "admin" &&
+      hotel.owner &&
+      hotel.owner.toString() !== (req.user.id || req.user._id)?.toString()
+    ) {
+      return res.status(403).json(errorResponse("NO_PERMISSION", 403));
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json(errorResponse("NO_IMAGES_UPLOADED", 400));
     }
 
     const imageUrls = req.files.map((file) => file.location);
