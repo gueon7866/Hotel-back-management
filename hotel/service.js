@@ -14,10 +14,7 @@ export const getHotelsByOwner = async (ownerId, options = {}) => {
   const filter = { owner: ownerId };
 
   const [items, total] = await Promise.all([
-    Hotel.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit),
+    Hotel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
     Hotel.countDocuments(filter),
   ]);
 
@@ -33,9 +30,16 @@ export const getHotelsByOwner = async (ownerId, options = {}) => {
 };
 
 // 호텔 생성
-// hotel/service.js
 export const createHotel = async (ownerId, data) => {
-  const { name, city, address, images = [] } = data;
+  const {
+    name,
+    city,
+    address,
+    images = [],
+    rating = 0,
+    freebies = [],
+    amenities = [],
+  } = data;
 
   if (!name || !city) {
     const err = new Error("HOTEL_REQUIRED_FIELDS");
@@ -50,11 +54,15 @@ export const createHotel = async (ownerId, data) => {
     owner: ownerId,
     images,
     status: "pending",
+
+    // ✅ 추가 저장
+    rating,
+    freebies,
+    amenities,
   });
 
   return hotel;
 };
-
 
 // 호텔 수정
 export const updateHotel = async (ownerId, hotelId, payload) => {
@@ -76,6 +84,11 @@ export const updateHotel = async (ownerId, hotelId, payload) => {
   if (payload.city !== undefined) hotel.city = payload.city;
   if (payload.address !== undefined) hotel.address = payload.address;
 
+  // ✅ 추가 업데이트
+  if (payload.rating !== undefined) hotel.rating = payload.rating;
+  if (payload.freebies !== undefined) hotel.freebies = payload.freebies;
+  if (payload.amenities !== undefined) hotel.amenities = payload.amenities;
+
   const updated = await hotel.save();
   return updated;
 };
@@ -91,7 +104,7 @@ export const getAllHotels = async (options = {}) => {
   const skip = (page - 1) * limit;
 
   const filter = {};
-  
+
   // 상태 필터가 있으면 적용
   if (options.status && options.status !== "all") {
     filter.status = options.status;

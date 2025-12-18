@@ -3,6 +3,26 @@ import * as hotelService from "./service.js";
 import Hotel from "./model.js";
 import { successResponse, errorResponse } from "../common/response.js";
 
+const parseArray = (v) => {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return [v];
+    }
+  }
+  return [];
+};
+
+const parseRating = (v) => {
+  if (v === undefined || v === null || v === "") return 0;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 //
 // OWNER (사업자)
 //
@@ -29,12 +49,20 @@ export const createHotel = async (req, res) => {
   try {
     const ownerId = req.user.id || req.user._id;
 
-    // 🔥 핵심: S3 업로드된 이미지 URL 추출
+    // S3 업로드된 이미지 URL
     const images = req.files?.map((file) => file.location) || [];
+
+    // ✅ 추가 파싱
+    const rating = parseRating(req.body.rating);
+    const freebies = parseArray(req.body.freebies);
+    const amenities = parseArray(req.body.amenities);
 
     const hotel = await hotelService.createHotel(ownerId, {
       ...req.body,
       images,
+      rating,
+      freebies,
+      amenities,
     });
 
     return res
@@ -54,7 +82,13 @@ export const updateHotel = async (req, res) => {
     const ownerId = req.user.id || req.user._id;
     const { hotelId } = req.params;
 
-    const hotel = await hotelService.updateHotel(ownerId, hotelId, req.body);
+    const payload = { ...req.body };
+
+    if ("rating" in req.body) payload.rating = parseRating(req.body.rating);
+    if ("freebies" in req.body) payload.freebies = parseArray(req.body.freebies);
+    if ("amenities" in req.body) payload.amenities = parseArray(req.body.amenities);
+
+    const hotel = await hotelService.updateHotel(ownerId, hotelId, payload);
 
     return res.status(200).json(successResponse(hotel, "HOTEL_UPDATED", 200));
   } catch (err) {
@@ -73,11 +107,7 @@ export const getAllHotels = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
 
-    const data = await hotelService.getAllHotels({
-      status,
-      page,
-      limit,
-    });
+    const data = await hotelService.getAllHotels({ status, page, limit });
 
     return res
       .status(200)
@@ -94,10 +124,7 @@ export const getPendingHotels = async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
 
-    const data = await hotelService.getPendingHotels({
-      page,
-      limit,
-    });
+    const data = await hotelService.getPendingHotels({ page, limit });
 
     return res
       .status(200)
@@ -148,9 +175,7 @@ export const uploadHotelImages = async (req, res) => {
 
     const hotel = await Hotel.findById(id);
     if (!hotel) {
-      return res
-        .status(404)
-        .json(errorResponse("HOTEL_NOT_FOUND", 404));
+      return res.status(404).json(errorResponse("HOTEL_NOT_FOUND", 404));
     }
 
     // owner는 본인 호텔만 업로드 가능 (admin은 전체 가능)
@@ -175,8 +200,6 @@ export const uploadHotelImages = async (req, res) => {
       .json(successResponse(hotel, "HOTEL_IMAGE_UPLOADED", 200));
   } catch (err) {
     console.error(err);
-    return res
-      .status(400)
-      .json(errorResponse(err.message, 400));
+    return res.status(400).json(errorResponse(err.message, 400));
   }
 };

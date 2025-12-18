@@ -1,28 +1,29 @@
 import multer from "multer";
 import multerS3 from "multer-s3";
-import AWS from "aws-sdk";
+import { S3Client } from "@aws-sdk/client-s3";
 
-// ✅ .env 키 이름이 섞여 있어도 동작하도록 최대한 호환
-const region = process.env.AWS_REGION || process.env.REGION;
-const accessKeyId =
-  process.env.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY;
-const secretAccessKey =
-  process.env.AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_KEY;
+const region = process.env.REGION;
+const accessKeyId = process.env.AWS_ACCESS_KEY;
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const bucket = process.env.BUCKET_NAME;
 
-if (!process.env.AWS_S3_BUCKET) {
-  console.warn("[S3] AWS_S3_BUCKET is not set.");
+if (!region || !accessKeyId || !secretAccessKey || !bucket) {
+  console.warn("[S3 ENV MISSING]", {
+    REGION: !!region,
+    AWS_ACCESS_KEY: !!accessKeyId,
+    AWS_SECRET_ACCESS_KEY: !!secretAccessKey,
+    BUCKET_NAME: !!bucket,
+  });
 }
-if (!region) {
-  console.warn("[S3] REGION/AWS_REGION is not set.");
-}
 
-const s3 = new AWS.S3({
+const s3 = new S3Client({
   region,
-  credentials: accessKeyId && secretAccessKey ? { accessKeyId, secretAccessKey } : undefined,
+  credentials: { accessKeyId, secretAccessKey },
 });
 
 const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
 
+// ✅ 기존 코드(라우트) 호환: s3ImageUpload("hotel").array("images", 5) 이런 형태 그대로 사용 가능
 export const s3ImageUpload = (folder) =>
   multer({
     fileFilter: (req, file, cb) => {
@@ -35,17 +36,14 @@ export const s3ImageUpload = (folder) =>
     },
     storage: multerS3({
       s3,
-      bucket: process.env.AWS_S3_BUCKET,
+      bucket,
       contentType: multerS3.AUTO_CONTENT_TYPE,
       key: (req, file, cb) => {
-        // 원본 파일명에 공백/특수문자가 들어가면 URL/키 이슈가 날 수 있어 간단히 정리
         const safeName = file.originalname
           .replace(/\s+/g, "_")
           .replace(/[^a-zA-Z0-9._-]/g, "");
         cb(null, `${folder}/${Date.now()}-${safeName}`);
       },
     }),
-    limits: {
-      fileSize: 5 * 1024 * 1024,
-    },
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   });
