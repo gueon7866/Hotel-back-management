@@ -1,5 +1,6 @@
-// room/controller.js
-import * as roomService from "./service.js";
+// hotel/controller.js
+import * as hotelService from "./service.js";
+import Hotel from "./model.js";
 import { successResponse, errorResponse } from "../common/response.js";
 
 const normalizeArrayField = (value) => {
@@ -33,20 +34,25 @@ const normalizeArrayField = (value) => {
   return [value];
 };
 
-// GET /api/room/owner/hotel/:hotelId (owner/admin)
-export const getRoomsByHotel = async (req, res) => {
+const normalizeNumberField = (value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value === "number") return value;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+//
+// OWNER
+//
+
+export const getMyHotels = async (req, res) => {
   try {
-    if (req.user.role !== "owner" && req.user.role !== "admin") {
-      return res.status(403).json(errorResponse("NO_PERMISSION", 403));
-    }
+    const ownerId = req.user.id || req.user._id;
+    const page = parseInt(req.query.page || 1, 10);
+    const limit = parseInt(req.query.limit || 10, 10);
 
-    const rooms = await roomService.getRoomsByHotel(
-      req.user.id || req.user._id,
-      req.params.hotelId,
-      req.user.role
-    );
-
-    return res.status(200).json(successResponse(rooms, "ROOM_LIST", 200));
+    const data = await hotelService.getHotelsByOwner(ownerId, { page, limit });
+    return res.status(200).json(successResponse(data, "MY_HOTELS", 200));
   } catch (err) {
     return res
       .status(err.statusCode || 400)
@@ -54,17 +60,20 @@ export const getRoomsByHotel = async (req, res) => {
   }
 };
 
-// POST /api/room/owner/:hotelId (owner only)
-export const createRoom = async (req, res) => {
+export const createHotel = async (req, res) => {
   try {
-    if (req.user.role !== "owner") {
-      return res.status(403).json(errorResponse("NO_PERMISSION", 403));
-    }
+    const ownerId = req.user.id || req.user._id;
 
     const uploadedImages = req.files?.map((f) => f.location) || [];
     const body = { ...req.body };
 
+    const freebies = normalizeArrayField(body.freebies);
+    const amenities = normalizeArrayField(body.amenities);
     const imagesFromBody = normalizeArrayField(body.images);
+
+    if (freebies !== undefined) body.freebies = freebies;
+    if (amenities !== undefined) body.amenities = amenities;
+
     if (uploadedImages.length > 0) {
       body.images = imagesFromBody
         ? [...imagesFromBody, ...uploadedImages]
@@ -73,16 +82,14 @@ export const createRoom = async (req, res) => {
       body.images = imagesFromBody;
     }
 
-    const amenitiesFromBody = normalizeArrayField(body.amenities);
-    if (amenitiesFromBody) body.amenities = amenitiesFromBody;
+    const rating = normalizeNumberField(body.rating);
+    if (rating !== undefined) body.rating = rating;
 
-    const room = await roomService.createRoom(
-      req.user.id || req.user._id,
-      req.params.hotelId,
-      body
-    );
+    const hotel = await hotelService.createHotel(ownerId, body);
 
-    return res.status(201).json(successResponse(room, "ROOM_CREATED", 201));
+    return res
+      .status(201)
+      .json(successResponse(hotel, "HOTEL_CREATED_PENDING", 201));
   } catch (err) {
     return res
       .status(err.statusCode || 400)
@@ -90,35 +97,26 @@ export const createRoom = async (req, res) => {
   }
 };
 
-// PATCH /api/room/owner/:roomId (owner only)
-export const updateRoom = async (req, res) => {
+export const updateHotel = async (req, res) => {
   try {
-    if (req.user.role !== "owner") {
-      return res.status(403).json(errorResponse("NO_PERMISSION", 403));
-    }
+    const ownerId = req.user.id || req.user._id;
+    const { hotelId } = req.params;
 
-    const uploadedImages = req.files?.map((f) => f.location) || [];
     const body = { ...req.body };
 
-    const imagesFromBody = normalizeArrayField(body.images);
-    if (uploadedImages.length > 0) {
-      body.images = imagesFromBody
-        ? [...imagesFromBody, ...uploadedImages]
-        : uploadedImages;
-    } else if (imagesFromBody) {
-      body.images = imagesFromBody;
-    }
+    const freebies = normalizeArrayField(body.freebies);
+    const amenities = normalizeArrayField(body.amenities);
+    const images = normalizeArrayField(body.images);
 
-    const amenitiesFromBody = normalizeArrayField(body.amenities);
-    if (amenitiesFromBody) body.amenities = amenitiesFromBody;
+    if (freebies !== undefined) body.freebies = freebies;
+    if (amenities !== undefined) body.amenities = amenities;
+    if (images !== undefined) body.images = images;
 
-    const room = await roomService.updateRoom(
-      req.user.id || req.user._id,
-      req.params.roomId,
-      body
-    );
+    const rating = normalizeNumberField(body.rating);
+    if (rating !== undefined) body.rating = rating;
 
-    return res.status(200).json(successResponse(room, "ROOM_UPDATED", 200));
+    const hotel = await hotelService.updateHotel(ownerId, hotelId, body);
+    return res.status(200).json(successResponse(hotel, "HOTEL_UPDATED", 200));
   } catch (err) {
     return res
       .status(err.statusCode || 400)
@@ -126,10 +124,81 @@ export const updateRoom = async (req, res) => {
   }
 };
 
-// POST /api/room/owner/:roomId/images (owner only)
-export const uploadRoomImages = async (req, res) => {
+//
+// ADMIN
+//
+
+export const getAllHotels = async (req, res) => {
   try {
-    if (req.user.role !== "owner") {
+    const { status, page = 1, limit = 20 } = req.query;
+
+    const data = await hotelService.getAllHotels({ status, page, limit });
+    return res.status(200).json(successResponse(data, "ALL_HOTELS", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const getPendingHotels = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+
+    const data = await hotelService.getPendingHotels({ page, limit });
+    return res.status(200).json(successResponse(data, "PENDING_HOTELS", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const approveHotel = async (req, res) => {
+  try {
+    const { hotelId } = req.params;
+    const hotel = await hotelService.approveHotel(hotelId);
+
+    return res
+      .status(200)
+      .json(successResponse(hotel, "HOTEL_APPROVED", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+export const rejectHotel = async (req, res) => {
+  try {
+    const { hotelId } = req.params;
+    const hotel = await hotelService.rejectHotel(hotelId);
+
+    return res
+      .status(200)
+      .json(successResponse(hotel, "HOTEL_REJECTED", 200));
+  } catch (err) {
+    return res
+      .status(err.statusCode || 400)
+      .json(errorResponse(err.message, err.statusCode || 400));
+  }
+};
+
+// 호텔 이미지 업로드
+export const uploadHotelImages = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const hotel = await Hotel.findById(id);
+    if (!hotel) {
+      return res.status(404).json(errorResponse("HOTEL_NOT_FOUND", 404));
+    }
+
+    if (
+      req.user?.role !== "admin" &&
+      hotel.owner &&
+      hotel.owner.toString() !== (req.user.id || req.user._id)?.toString()
+    ) {
       return res.status(403).json(errorResponse("NO_PERMISSION", 403));
     }
 
@@ -138,35 +207,13 @@ export const uploadRoomImages = async (req, res) => {
     }
 
     const imageUrls = req.files.map((file) => file.location);
-    const room = await roomService.addRoomImages(
-      req.user.id || req.user._id,
-      req.params.roomId,
-      imageUrls
-    );
+    hotel.images = [...(hotel.images || []), ...imageUrls];
+    await hotel.save();
 
     return res
       .status(200)
-      .json(successResponse(room, "ROOM_IMAGE_UPLOADED", 200));
+      .json(successResponse(hotel, "HOTEL_IMAGE_UPLOADED", 200));
   } catch (err) {
-    return res
-      .status(err.statusCode || 400)
-      .json(errorResponse(err.message, err.statusCode || 400));
-  }
-};
-
-// DELETE /api/room/owner/:roomId (owner only)
-export const deleteRoom = async (req, res) => {
-  try {
-    if (req.user.role !== "owner") {
-      return res.status(403).json(errorResponse("NO_PERMISSION", 403));
-    }
-
-    await roomService.deleteRoom(req.user.id || req.user._id, req.params.roomId);
-
-    return res.status(200).json(successResponse(null, "ROOM_DELETED", 200));
-  } catch (err) {
-    return res
-      .status(err.statusCode || 400)
-      .json(errorResponse(err.message, err.statusCode || 400));
+    return res.status(400).json(errorResponse(err.message, 400));
   }
 };
