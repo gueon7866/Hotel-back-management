@@ -3,11 +3,10 @@ import Room from "./model.js";
 import Hotel from "../hotel/model.js";
 
 //
-// Owner(사업자) 서비스
+// 조회: admin은 전체 조회 가능 / owner는 본인 호텔만
 //
 
-// 특정 호텔의 객실 목록
-export const getRoomsByHotel = async (ownerId, hotelId) => {
+export const getRoomsByHotel = async (ownerId, hotelId, userRole = null) => {
   const hotel = await Hotel.findById(hotelId);
 
   if (!hotel) {
@@ -16,19 +15,23 @@ export const getRoomsByHotel = async (ownerId, hotelId) => {
     throw err;
   }
 
-  // owner 필드가 비어 있으면 현재 오너로 보정
-  if (!hotel.owner) {
-    hotel.owner = ownerId;
-    await hotel.save();
-  } else if (hotel.owner.toString() !== ownerId.toString()) {
-    const err = new Error("NO_PERMISSION");
-    err.statusCode = 403;
-    throw err;
+  // ✅ admin은 권한 체크 스킵 (모든 호텔 조회 가능)
+  if (userRole !== "admin") {
+    // ✅ 조회에서 owner 자동 보정(저장) 금지 — 데이터 꼬임 방지
+    if (!hotel.owner || hotel.owner.toString() !== ownerId.toString()) {
+      const err = new Error("NO_PERMISSION");
+      err.statusCode = 403;
+      throw err;
+    }
   }
 
   const rooms = await Room.find({ hotel: hotelId }).sort({ createdAt: -1 });
   return rooms;
 };
+
+//
+// CRUD: owner만 가능 (컨트롤러에서 이미 막지만, 서비스도 안전하게 유지)
+//
 
 // 객실 생성
 export const createRoom = async (ownerId, hotelId, data) => {
@@ -40,11 +43,7 @@ export const createRoom = async (ownerId, hotelId, data) => {
     throw err;
   }
 
-  if (!hotel.owner) {
-    // owner 정보가 비어 있으면 현재 오너로 보정
-    hotel.owner = ownerId;
-    await hotel.save();
-  } else if (hotel.owner.toString() !== ownerId.toString()) {
+  if (!hotel.owner || hotel.owner.toString() !== ownerId.toString()) {
     const err = new Error("NO_PERMISSION");
     err.statusCode = 403;
     throw err;
@@ -91,10 +90,7 @@ export const updateRoom = async (ownerId, roomId, updates) => {
     throw err;
   }
 
-  if (!hotel.owner) {
-    hotel.owner = ownerId;
-    await hotel.save();
-  } else if (hotel.owner.toString() !== ownerId.toString()) {
+  if (!hotel.owner || hotel.owner.toString() !== ownerId.toString()) {
     const err = new Error("NO_PERMISSION");
     err.statusCode = 403;
     throw err;
@@ -139,10 +135,7 @@ export const deleteRoom = async (ownerId, roomId) => {
     throw err;
   }
 
-  if (!hotel.owner) {
-    hotel.owner = ownerId;
-    await hotel.save();
-  } else if (hotel.owner.toString() !== ownerId.toString()) {
+  if (!hotel.owner || hotel.owner.toString() !== ownerId.toString()) {
     const err = new Error("NO_PERMISSION");
     err.statusCode = 403;
     throw err;
@@ -168,10 +161,7 @@ export const addRoomImages = async (ownerId, roomId, imageUrls = []) => {
     throw err;
   }
 
-  if (!hotel.owner) {
-    hotel.owner = ownerId;
-    await hotel.save();
-  } else if (hotel.owner.toString() !== ownerId.toString()) {
+  if (!hotel.owner || hotel.owner.toString() !== ownerId.toString()) {
     const err = new Error("NO_PERMISSION");
     err.statusCode = 403;
     throw err;
