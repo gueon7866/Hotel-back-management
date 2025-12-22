@@ -39,7 +39,8 @@ export const getRoomsByHotel = async (req, res) => {
 
     const rooms = await roomService.getRoomsByHotel(
       req.user.id || req.user._id,
-      req.params.hotelId
+      req.params.hotelId,
+      req.user.role
     );
 
     return res.status(200).json(successResponse(rooms, "ROOM_LIST", 200));

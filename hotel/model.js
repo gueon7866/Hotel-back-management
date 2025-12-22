@@ -44,7 +44,8 @@ const hotelSchema = new mongoose.Schema(
 
     // ✅ 추가: 평점/혜택/편의시설
     // ratingOptions에서 5,4,3,2,1 같은 값(혹은 4.5 같은 숫자) 저장 가능
-    rating: { type: Number, min: 1, max: 5, default: 0 },
+    // 0은 평점이 없음을 의미하므로 min: 0으로 설정
+    rating: { type: Number, min: 0, max: 5, default: 0 },
 
     freebies: {
       type: [String],
@@ -52,9 +53,10 @@ const hotelSchema = new mongoose.Schema(
       default: [],
     },
 
+    // amenities에 FREEBIES 값들도 포함 (무료 와이파이, 공항 셔틀 등)
     amenities: {
       type: [String],
-      enum: AMENITIES,
+      enum: [...AMENITIES, ...FREEBIES],
       default: [],
     },
   },
